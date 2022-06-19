@@ -1,0 +1,3 @@
+ansible-env
+.become-pass
+.vault-pass

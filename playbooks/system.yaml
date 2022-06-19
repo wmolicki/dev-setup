@@ -1,0 +1,98 @@
+---
+- hosts: all
+
+  vars:
+    home: "{{ lookup('env', 'HOME') }}"
+    user: "{{ lookup('env', 'USER') }}"
+    source_key: "../secrets/id_rsa"
+    dest_key: "{{ lookup('env', 'HOME') }}/.ssh/id_rsa"
+
+  tasks:
+    - name: Update and upgrade apt
+      become: true
+      apt:
+        upgrade: yes
+        update_cache: yes
+        cache_valid_time: 86400 # one day
+
+    - name: Create .ssh dir
+      file:
+        dest: "{{ dest_key | dirname }}"
+        mode: 0700
+        state: directory
+
+    - name: Copy ssh key
+      copy:
+        src: "{{ source_key }}"
+        dest: "{{ dest_key }}"
+        mode: 0600
+
+    - name: Set authorized key
+      authorized_key:
+        user: "{{ user }}"
+        state: present
+        key: "{{ lookup('file', item) }}"
+      with_fileglob: "{{ home }}/.ssh/id_rsa.pub"
+
+    - name: Clone dotfiles
+      ansible.builtin.git:
+        repo: git@github.com:wmolicki/dotfiles.git
+        dest: "{{ home }}/src/dotfiles"
+        update: yes
+
+    - name: Install packages
+      become: true
+      apt:
+        pkg:
+          - git
+          - zsh
+          - htop
+          - alacritty
+          - blueman
+          - build-essential
+          - ca-certificates
+          - curl
+          - fonts-powerline
+          - gimp
+          - gnupg
+          - i3
+          - libbz2-dev
+          - libffi-dev
+          - liblzma-dev
+          - libncursesw5-dev
+          - libreadline-dev
+          - libsqlite3-dev
+          - libssl-dev
+          - libxml2-dev
+          - libxmlsec1-dev
+          - llvm
+          - lsb-release
+          - maim
+          - make
+          - ripgrep
+          - rofi
+          - tk-dev
+          - tmux
+          - wget
+          - xclip
+          - xz-utils
+          - zlib1g-dev
+
+    - name: Create symlinks to dotfiles
+      ansible.builtin.file:
+        src: "/home/wmolicki/{{ item.src }}"
+        dest: "/home/wmolicki/{{ item.dest }}"
+        state: link
+      loop:
+        - { src: 'src/dotfiles/.config/i3', dest: '.config/i3' }
+        - { src: 'src/dotfiles/.config/i3status', dest: '.config/i3status' }
+        - { src: 'src/dotfiles/.config/alacritty', dest: '.config/alacritty' }
+        - { src: 'src/dotfiles/.gitconfig', dest: '.gitconfig' }
+        - { src: 'src/dotfiles/.config/nvim/init.vim', dest: '.config/nvim/init.vim' }
+        - { src: 'src/dotfiles/.zshrc', dest: '.zshrc' }
+
+    - name: Install VimPlug
+      shell: | 
+        curl -fLo "${XDG_DATA_HOME:-$HOME/.local/share}"/nvim/site/autoload/plug.vim \
+                                                               --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+
