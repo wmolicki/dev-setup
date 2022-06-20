@@ -44,6 +44,7 @@
       become: true
       apt:
         pkg:
+          - feh
           - git
           - silversearcher-ag
           - zsh
@@ -97,3 +98,22 @@
         curl -fLo "${XDG_DATA_HOME:-$HOME/.local/share}"/nvim/site/autoload/plug.vim \
                                                                --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
 
+    - name: Check OhMyZsh installed
+      stat:
+        path: "{{ home }}/.oh-my-zsh"
+      register: ohmyzsh_dir
+
+    - name: Install OhMyZsh
+      shell: |
+        git clone https://github.com/ohmyzsh/ohmyzsh.git ~/.oh-my-zsh
+      when: not ohmyzsh_dir.stat.exists
+
+    - name: Check Powerlevel10k installed
+      stat:
+        path: "{{ home }}/.oh-my-zsh/custom/themes/powerlevel10k"
+      register: powerlevel_dir
+
+    - name: Install Powerlevel10k
+      shell: |
+        git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
+      when: not powerlevel_dir.stat.exists
