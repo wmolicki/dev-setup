@@ -75,6 +75,7 @@
           - rofi
           - tk-dev
           - tmux
+          - keychain
           - wget
           - xclip
           - xz-utils
