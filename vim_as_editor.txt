@@ -17,6 +17,7 @@ shift+n -> previous result
 
 * -> jump to next occurence of the thing the cursor is on
 # -> same but backwards
+% -> jump to matching parenthesis
 
 (n/shift-n to repeat */#)
 
@@ -101,6 +102,7 @@ CTRL+w + hjkl -> move focus
 
 CTRL+w h -> go from vertical to horisontal
 
+CTRL+w T -> open current buffer in separate tab
 
 TeeJays Debugging in Neovim:
 
@@ -113,10 +115,13 @@ also for mappings ->
 
 to replace multiple occurences of something ->
 select visual multiple lines, :s/PATTERN/REPLACE
+add /g at the end to do this for all occurences in line
+replace s with %s to do this in the whole file
 
 dap -> delete around paragraph
 >ap -> indent a paragraph (use . and u to indent more/dedent)
 
-
+gd -> go to definition (remap)
+ctrl+t -> jump back after the jump (jump to tag, instead of ctrl-o which jumps to location)
 
 TODO: vimium f plugin for neovim?
