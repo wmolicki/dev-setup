@@ -1,0 +1,9 @@
+---
+- import_playbook: system.yaml
+- import_playbook: ssh.yaml
+- import_playbook: dotfiles.yaml
+- import_playbook: neovim.yaml
+- import_playbook: docker.yaml
+- import_playbook: go.yaml
+- import_playbook: node.yaml
+
