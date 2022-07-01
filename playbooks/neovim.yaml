@@ -1,0 +1,28 @@
+---
+- hosts: all
+
+  vars:
+    home: "{{ lookup('env', 'HOME') }}"
+    user: "{{ lookup('env', 'USER') }}"
+    source_key: "../secrets/id_rsa"
+    dest_key: "{{ lookup('env', 'HOME') }}/.ssh/id_rsa"
+
+  tasks:
+    - name: clone neovim
+      ansible.builtin.git:
+        repo: git@github.com:neovim/neovim.git
+        dest: "{{ home }}/vendor/neovim"
+        update: yes
+        single_branch: yes
+        version: release-0.7
+        depth: 1
+
+    - name: build neovim
+      shell: "cd {{ home }}/vendor/neovim && make CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_INSTALL_PREFIX={{ home }}/opt/neovim" 
+    
+    - name: install neovim
+      shell: "cd {{ home }}/vendor/neovim && make install"
+
+    - name: make clean
+      shell: "cd {{ home }}/vendor/neovim && make distclean"
+

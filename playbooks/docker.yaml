@@ -1,0 +1,55 @@
+---
+- hosts: all
+  become: yes
+
+  vars:
+    home: "{{ lookup('env', 'HOME') }}"
+    user: "{{ lookup('env', 'USER') }}"
+    go_version: "1.18.3"
+
+  tasks:
+    - name: create keyrings
+      shell: mkdir -p /etc/apt/keyrings
+
+    - name: add docker gpg key
+      shell: curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --yes --dearmor -o /etc/apt/keyrings/docker.gpg
+
+    - name: setup docker repository
+      shell: |
+        echo \
+        "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+         https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+    - name: Update and upgrade apt
+      apt:
+        update_cache: yes
+        cache_valid_time: 86400 # one day
+
+    - name: Install packages
+      become: true
+      apt:
+        pkg:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose-plugin
+
+    - name: verify this shite is working
+      shell: docker run hello-world
+      register: out
+
+    - debug: msg={{ out.stdout }}
+
+    - name: ensure docker group exists
+      ansible.builtin.group:
+        name: docker
+        state: present
+
+    - name: ensure user added to docker group
+      user:
+        name: "{{ user }}"
+        groups: docker
+        append: yes
+
+    - debug: msg="group changes will be visible after restart"
+

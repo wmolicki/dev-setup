@@ -1,0 +1,60 @@
+---
+- hosts: all
+
+  vars:
+    home: "{{ lookup('env', 'HOME') }}"
+    user: "{{ lookup('env', 'USER') }}"
+
+  tasks:
+    - name: Clone dotfiles
+      ansible.builtin.git:
+        repo: git@github.com:wmolicki/dotfiles.git
+        dest: "{{ home }}/src/dotfiles"
+        update: yes
+
+    - name: Create symlinks to dotfiles
+      ansible.builtin.file:
+        src: "/home/wmolicki/{{ item.src }}"
+        dest: "/home/wmolicki/{{ item.dest }}"
+        state: link
+      loop:
+        - { src: 'src/dotfiles/.tmux.conf', dest: '.tmux.conf' }
+        - { src: 'src/dotfiles/.config/i3', dest: '.config/i3' }
+        - { src: 'src/dotfiles/.profile', dest: '.profile' }
+        - { src: 'src/dotfiles/.config/i3status', dest: '.config/i3status' }
+        - { src: 'src/dotfiles/.config/alacritty', dest: '.config/alacritty' }
+        - { src: 'src/dotfiles/.gitconfig', dest: '.gitconfig' }
+        - { src: 'src/dotfiles/.config/nvim/init.vim', dest: '.config/nvim/init.vim' }
+        - { src: 'src/dotfiles/.zshrc', dest: '.zshrc' }
+
+    - name: Check OhMyZsh installed
+      stat:
+        path: "{{ home }}/.local/share/nvim/site/autoload/plug.vim"
+      register: vim_plug
+
+    - name: Install VimPlug
+      shell: | 
+        curl -fLo "${XDG_DATA_HOME:-$HOME/.local/share}"/nvim/site/autoload/plug.vim \
+                                                               --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+      when: not vim_plug.stat.exists
+
+    - name: Check OhMyZsh installed
+      stat:
+        path: "{{ home }}/.oh-my-zsh"
+      register: ohmyzsh_dir
+
+    - name: Install OhMyZsh
+      shell: |
+        git clone https://github.com/ohmyzsh/ohmyzsh.git ~/.oh-my-zsh
+      when: not ohmyzsh_dir.stat.exists
+
+    - name: Check Powerlevel10k installed
+      stat:
+        path: "{{ home }}/.oh-my-zsh/custom/themes/powerlevel10k"
+      register: powerlevel_dir
+
+    - name: Install Powerlevel10k
+      shell: |
+        git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
+      when: not powerlevel_dir.stat.exists
+

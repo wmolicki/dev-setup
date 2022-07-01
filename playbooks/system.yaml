@@ -4,8 +4,6 @@
   vars:
     home: "{{ lookup('env', 'HOME') }}"
     user: "{{ lookup('env', 'USER') }}"
-    source_key: "../secrets/id_rsa"
-    dest_key: "{{ lookup('env', 'HOME') }}/.ssh/id_rsa"
 
   tasks:
     - name: Update and upgrade apt
@@ -15,45 +13,32 @@
         update_cache: yes
         cache_valid_time: 86400 # one day
 
-    - name: Create .ssh dir
-      file:
-        dest: "{{ dest_key | dirname }}"
-        mode: 0700
-        state: directory
-
     # - name: Copy files
     #   file:
     #     dest: {{ path }}
     #     src: root/*
-    #
+
     # https://gist.github.com/andrebrait/961cefe730f4a2c41f57911e6195e444
-    - name: update-initramfs
-      shell: update-initramfs -u -k all
-      become: true
-
-    - name: Copy ssh key
-      copy:
-        src: "{{ source_key }}"
-        dest: "{{ dest_key }}"
-        mode: 0600
-
-    - name: Set authorized key
-      authorized_key:
-        user: "{{ user }}"
-        state: present
-        key: "{{ lookup('file', item) }}"
-      with_fileglob: "{{ home }}/.ssh/id_rsa.pub"
-
-    - name: Clone dotfiles
-      ansible.builtin.git:
-        repo: git@github.com:wmolicki/dotfiles.git
-        dest: "{{ home }}/src/dotfiles"
-        update: yes
+    # - name: update-initramfs
+    #   shell: update-initramfs -u -k all
+    #   become: true
 
     - name: Install packages
       become: true
       apt:
         pkg:
+          - ninja-build
+          - gettext
+          - libtool
+          - libtool-bin
+          - autoconf
+          - automake
+          - cmake
+          - g++
+          - pkg-config
+          - unzip
+          - curl
+          - doxygen
           - neofetch
           - vlc
           - imwheel
@@ -95,41 +80,3 @@
           - xz-utils
           - zlib1g-dev
 
-    - name: Create symlinks to dotfiles
-      ansible.builtin.file:
-        src: "/home/wmolicki/{{ item.src }}"
-        dest: "/home/wmolicki/{{ item.dest }}"
-        state: link
-      loop:
-        - { src: 'src/dotfiles/.config/i3', dest: '.config/i3' }
-        - { src: 'src/dotfiles/.profile', dest: '.profile' }
-        - { src: 'src/dotfiles/.config/i3status', dest: '.config/i3status' }
-        - { src: 'src/dotfiles/.config/alacritty', dest: '.config/alacritty' }
-        - { src: 'src/dotfiles/.gitconfig', dest: '.gitconfig' }
-        - { src: 'src/dotfiles/.config/nvim/init.vim', dest: '.config/nvim/init.vim' }
-        - { src: 'src/dotfiles/.zshrc', dest: '.zshrc' }
-
-    - name: Install VimPlug
-      shell: | 
-        curl -fLo "${XDG_DATA_HOME:-$HOME/.local/share}"/nvim/site/autoload/plug.vim \
-                                                               --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
-
-    - name: Check OhMyZsh installed
-      stat:
-        path: "{{ home }}/.oh-my-zsh"
-      register: ohmyzsh_dir
-
-    - name: Install OhMyZsh
-      shell: |
-        git clone https://github.com/ohmyzsh/ohmyzsh.git ~/.oh-my-zsh
-      when: not ohmyzsh_dir.stat.exists
-
-    - name: Check Powerlevel10k installed
-      stat:
-        path: "{{ home }}/.oh-my-zsh/custom/themes/powerlevel10k"
-      register: powerlevel_dir
-
-    - name: Install Powerlevel10k
-      shell: |
-        git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
-      when: not powerlevel_dir.stat.exists

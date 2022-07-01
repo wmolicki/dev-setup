@@ -1,0 +1,29 @@
+---
+- hosts: all
+
+  vars:
+    home: "{{ lookup('env', 'HOME') }}"
+    user: "{{ lookup('env', 'USER') }}"
+    go_version: "1.18.3"
+
+  tasks:
+    - name: download go
+      ansible.builtin.get_url:
+        url: "https://go.dev/dl/go{{ go_version }}.linux-amd64.tar.gz"
+        dest: "{{ home }}/Downloads"
+
+    - name: unpack and replace go
+      shell: "rm -rf /usr/local/go && tar -C /usr/local -xzf {{ home }}/Downloads/go{{ go_version }}.linux-amd64.tar.gz"
+      become: yes
+
+    - name: remove downloaded file
+      file:
+        state: absent
+        path: "{{ home }}/Downloads/go{{ go_version }}.linux-amd64.tar.gz"
+
+    - name: print go version
+      shell: go version
+      register: out
+
+    - debug: msg={{ out.stdout }}
+
