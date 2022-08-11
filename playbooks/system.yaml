@@ -80,4 +80,8 @@
           - xclip
           - xz-utils
           - zlib1g-dev
+          - openssh-server
 
+
+  # TODO: ctop
+  # wombat
